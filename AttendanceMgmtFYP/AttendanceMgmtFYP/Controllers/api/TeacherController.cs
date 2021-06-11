@@ -1,23 +1,26 @@
 ﻿using AttendanceMgmtFYP.Data;
 using AttendanceMgmtFYP.Models;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace AttendanceMgmtFYP.Controllers.api
 {
     [Route("api/[controller]")]
     public class TeacherController : Controller
     {
-        private readonly Context _context;
-        public TeacherController(Context context)
+        private readonly IWebHostEnvironment hostingEnvironment;
+        public TeacherController(IWebHostEnvironment webHostEnvironment,Context context)
         {
-
-            this._context = context;
+            hostingEnvironment = webHostEnvironment;
+            _context = context;
         }
+        private readonly Context _context;
         [HttpGet]
         public Object Get()
         {
@@ -31,28 +34,39 @@ namespace AttendanceMgmtFYP.Controllers.api
             return Ok(Teacher);
         }
         [HttpPost]
-        public Object post([FromForm] Teacher teacher, [FromForm] IFormFile Image)
+        public async Task<IActionResult> Post([FromForm]Teacher teacher,[FromForm]IFormFile Image)
         {
-
-
-
-            using (var ms = new MemoryStream())
+            if (Image != null)
             {
-                Image.CopyTo(ms);
-                var fileBytes = ms.ToArray();
-                teacher.Image = Convert.ToBase64String(fileBytes);
-                // act on the Base64 data
+                var uploadFolder = Path.Combine(hostingEnvironment.WebRootPath, "images");
+                var filename = Guid.NewGuid().ToString() + "_" + Image.FileName;
+                string filePath = Path.Combine(uploadFolder, filename);
+                using (var stream = System.IO.File.Create(filePath))
+                {
+                    await Image.CopyToAsync(stream);
+                }
+                teacher.FileName = filename;
+                teacher.OrignalFileName = Image.FileName;
             }
-
-
             if (ModelState.IsValid)
             {
                 _context.Teachers.Add(teacher);
-                _context.SaveChanges();
-                return Ok(new { id = teacher.TeacherId });
+                await _context.SaveChangesAsync();
+                return Ok(new { teacherid = teacher.TeacherId });
             }
             return BadRequest();
         }
 
+        [HttpGet("Image/{TeacherId:int}")]
+        public IActionResult FilePath(int TeacherId)
+        {
+            var uploadFolder = Path.Combine(hostingEnvironment.WebRootPath, "images");
+            var filename = (from fn in _context.Teachers
+                            where fn.TeacherId == TeacherId
+                            select fn.FileName).FirstOrDefault();
+            string filePath = Path.Combine(uploadFolder, filename);
+            return PhysicalFile(filePath, "image/jpg");
+
+        }
     }
 }
