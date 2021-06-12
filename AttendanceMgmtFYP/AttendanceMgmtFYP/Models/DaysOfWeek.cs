@@ -2,19 +2,16 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
+
+#nullable disable
 
 namespace AttendanceMgmtFYP.Models
 {
-    public class users
+    public partial class DaysOfWeek
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int UserId { get; set; }
-        public string username { get; set; }
-        public string password { get; set; }
-        public string type { get; set; }
+        public int DayId { get; set; }
+        public string DayName { get; set; }
     }
 }

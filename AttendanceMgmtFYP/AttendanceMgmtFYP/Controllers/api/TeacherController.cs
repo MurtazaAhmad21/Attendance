@@ -15,7 +15,7 @@ namespace AttendanceMgmtFYP.Controllers.api
     public class TeacherController : Controller
     {
         private readonly IWebHostEnvironment hostingEnvironment;
-        public TeacherController(IWebHostEnvironment webHostEnvironment,Context context)
+        public TeacherController(IWebHostEnvironment webHostEnvironment, Context context)
         {
             hostingEnvironment = webHostEnvironment;
             _context = context;
@@ -34,7 +34,7 @@ namespace AttendanceMgmtFYP.Controllers.api
             return Ok(Teacher);
         }
         [HttpPost]
-        public async Task<IActionResult> Post([FromForm]Teacher teacher,[FromForm]IFormFile Image)
+        public async Task<IActionResult> Post([FromForm] Teacher teacher, [FromForm] IFormFile Image)
         {
             if (Image != null)
             {
@@ -68,5 +68,49 @@ namespace AttendanceMgmtFYP.Controllers.api
             return PhysicalFile(filePath, "image/jpg");
 
         }
+
+        [HttpPost("Update")]
+        public async Task<IActionResult> Update([FromForm] Teacher teacher, [FromForm] IFormFile Image)
+        {
+            if (teacher.TeacherId <= 0)
+            {
+                return BadRequest();
+            }
+            var _teacher = await _context.Teachers.FindAsync(teacher.TeacherId);
+            _context.Entry(_teacher).State = Microsoft.EntityFrameworkCore.EntityState.Deleted;
+            if (Image != null)
+            {
+                var uploadFolder = Path.Combine(hostingEnvironment.WebRootPath, "images");
+                var filename = Guid.NewGuid().ToString() + "_" + Image.FileName;
+                string filePath = Path.Combine(uploadFolder, filename);
+                using (var stream = System.IO.File.Create(filePath))
+                {
+                    await Image.CopyToAsync(stream);
+                }
+                teacher.FileName = filename;
+                teacher.OrignalFileName = Image.FileName;
+            }
+            _teacher.FirstName = teacher.FirstName;
+            _teacher.LastName = teacher.LastName;
+            _teacher.FileName = teacher.FileName;
+            _teacher.DateofBirth = teacher.DateofBirth;
+            _teacher.Gender = teacher.Gender;
+            _teacher.OrignalFileName = teacher.OrignalFileName;
+            _teacher.Cnic = teacher.Cnic;
+            _context.Update(_teacher);
+            _context.SaveChanges();
+            return Ok();
+        }
+
+        [HttpGet("Delete/{TeacherId:int}")]
+        public async Task<IActionResult> Delete(int TeacherId)
+        {
+            if (TeacherId <= 0) return BadRequest();
+            _context.Teachers.Remove(_context.Teachers.Find(TeacherId));
+            await _context.SaveChangesAsync();
+            return Ok(new { TeacherId = TeacherId });
+        }
+
     }
+
 }

@@ -16,11 +16,12 @@ namespace AttendanceMgmtFYP.Controllers.API
         //public NebulaUser_Rep nebulaUser;
         private readonly IJWTAuth Auth;
         private readonly Context _context;
-        public LoginController(Context context,IJWTAuth Auth){
-           //nebulaUser  = new NebulaUser_Rep(context);
-           this.Auth = Auth;
+        public LoginController(Context context, IJWTAuth Auth)
+        {
+            //nebulaUser  = new NebulaUser_Rep(context);
+            this.Auth = Auth;
             this._context = context;
-            
+
         }
 
 
@@ -29,14 +30,15 @@ namespace AttendanceMgmtFYP.Controllers.API
         {
             return null;
         }
-   
+
         [HttpGet("{username}/{password}")]
         [AllowAnonymous]
         public Object Get(string username, string password)
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password)) return BadRequest();
-            var user = _context.Users.Where(e => e.username == username && e.password == password).ToList();
-            if (user.Count > 0) {
+            var user = _context.Users.Where(e => e.Username == username && e.Password == password).ToList();
+            if (user.Count > 0)
+            {
                 return Ok(new { token = Auth.GetToken(username, password), user = user.First() });
             }
             else
